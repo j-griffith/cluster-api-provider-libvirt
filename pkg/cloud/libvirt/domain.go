@@ -8,7 +8,7 @@ import (
 	libvirtxml "github.com/libvirt/libvirt-go-xml"
 )
 
-func CreateDomain(name string, vcpu int, memory_in_gb uint, image_uri string, user_data_uri string) error {
+func CreateDomain(name string, vcpu int, memory_in_gb uint, image_uri, user_data_uri, nodeURI string) error {
 	domainDef, err := defineDomain(name, vcpu, memory_in_gb, image_uri, user_data_uri)
 	if err != nil {
 		return fmt.Errorf("Error defining domain %v XML: %v", name, err)
@@ -17,6 +17,8 @@ func CreateDomain(name string, vcpu int, memory_in_gb uint, image_uri string, us
 	log.Printf("Domain Definition XML: %v", domainDef)
 
 	conn, err := libvirt.NewConnect("qemu+tcp://192.168.122.1:16509/system")
+	//log.Printf("JDG-Debug: Trying to create a new connection using: %s\n", nodeURI)
+	//conn, err := libvirt.NewConnect(nodeURI)
 	if err != nil {
 		log.Printf("Error creating a new Libvirt connection: %v", err)
 		return fmt.Errorf("Error creating a new Libvirt connection: %v", err)
@@ -31,8 +33,10 @@ func CreateDomain(name string, vcpu int, memory_in_gb uint, image_uri string, us
 	return nil
 }
 
-func DomainExists(domainName string) (bool, error) {
+func DomainExists(domainName, nodeURI string) (bool, error) {
 	conn, err := libvirt.NewConnect("qemu+tcp://192.168.122.1:16509/system")
+	//log.Printf("JDG-Debug: Trying to create a new connection using: %s\n", nodeURI)
+	//conn, err := libvirt.NewConnect(nodeURI)
 	if err != nil {
 		log.Printf("Error creating a new Libvirt connection: %v", err)
 		return false, fmt.Errorf("Error creating a new Libvirt connection: %v", err)

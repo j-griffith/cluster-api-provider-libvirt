@@ -35,6 +35,10 @@ spec:
               description: Amount of RAM in GBs
               format: int64
               type: integer
+            nodeURI:
+              description: NodeURI provides a connection string to the KVM node we
+                want the machine to be created on
+              type: string
             userDataURI:
               description: UserData URI of cloud-init image
               type: string
@@ -49,6 +53,7 @@ spec:
           - memoryInGB
           - imageURI
           - userDataURI
+          - nodeURI
           type: object
         status:
           type: object

@@ -38,6 +38,9 @@ type LibvirtMachineProviderSpecSpec struct {
 
 	// UserData URI of cloud-init image
 	UserDataURI string `json:"userDataURI"`
+
+	// NodeURI provides a connection string to the KVM node we want the machine to be created on
+	NodeURI string `json:"nodeURI"`
 }
 
 // LibvirtMachineProviderSpecStatus defines the observed state of LibvirtMachineProviderSpec

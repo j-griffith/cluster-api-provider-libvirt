@@ -27,23 +27,41 @@ type Actuator struct {
 	client client.Client
 }
 
+func unmarshalProviderSpec(machine *clusterv1.Machine) (v1alpha1.LibvirtMachineProviderSpec, error) {
+	var providerSpec v1alpha1.LibvirtMachineProviderSpec
+	err := yaml.UnmarshalStrict(machine.Spec.ProviderSpec.Value.Raw, &providerSpec)
+	if err != nil {
+		log.Printf("Error unmarshalling machine provider spec: %+v", err)
+		return v1alpha1.LibvirtMachineProviderSpec{}, err
+	}
+
+	return providerSpec, nil
+}
+
 func (a *Actuator) Create(ctx context.Context, cluster *clusterv1.Cluster, machine *clusterv1.Machine) error {
 	if machine.Spec.ProviderSpec.Value == nil {
 		log.Printf("Machine Provider Spec not passed")
 		return fmt.Errorf("Machine Provider Spec not passed")
 	}
 
-	var providerSpec v1alpha1.LibvirtMachineProviderSpec
-	err := yaml.UnmarshalStrict(machine.Spec.ProviderSpec.Value.Raw, &providerSpec)
-	if err != nil {
-		log.Printf("Error unmarshalling machine provider spec: %+v", err)
-		return err
-	}
+	/*
+		var providerSpec v1alpha1.LibvirtMachineProviderSpec
+		err := yaml.UnmarshalStrict(machine.Spec.ProviderSpec.Value.Raw, &providerSpec)
+		if err != nil {
+			log.Printf("Error unmarshalling machine provider spec: %+v", err)
+			return err
+		}
+		spec := providerSpec.Spec
+	*/
 
-	spec := providerSpec.Spec
+	providerSpec, err := unmarshalProviderSpec(machine)
+	if err != nil {
+		log.Printf("Error creating node for machine: %v, %v", machine, err)
+		return fmt.Errorf("Error creating node for machine: %v, %v", machine, err)
+	}
 	log.Printf("Create machine actuator called for machine %v", providerSpec)
 
-	err = l.CreateDomain(machine.Name, spec.VCPU, uint(spec.MemoryInGB), spec.ImageURI, spec.UserDataURI)
+	err = l.CreateDomain(machine.Name, providerSpec.Spec.VCPU, uint(providerSpec.Spec.MemoryInGB), providerSpec.Spec.ImageURI, providerSpec.Spec.UserDataURI, providerSpec.Spec.NodeURI)
 	if err != nil {
 		log.Printf("Error creating node for machine: %v, %v", machine, err)
 		return fmt.Errorf("Error creating node for machine: %v, %v", machine, err)
@@ -62,7 +80,13 @@ func (a *Actuator) Update(ctx context.Context, cluster *clusterv1.Cluster, machi
 }
 
 func (a *Actuator) Exists(ctx context.Context, cluster *clusterv1.Cluster, machine *clusterv1.Machine) (bool, error) {
-	return l.DomainExists(machine.Name)
+	providerSpec, err := unmarshalProviderSpec(machine)
+	if err != nil {
+		log.Printf("Error creating node for machine: %v, %v", machine, err)
+		return false, fmt.Errorf("Error creating node for machine: %v, %v", machine, err)
+	}
+	log.Printf("Create machine actuator called for machine %v", providerSpec)
+	return l.DomainExists(machine.Name, providerSpec.Spec.NodeURI)
 }
 
 func (a *Actuator) GetIP(cluster *clusterv1.Cluster, machine *clusterv1.Machine) (string, error) {
