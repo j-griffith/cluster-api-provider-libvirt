@@ -16,9 +16,7 @@ func CreateDomain(name string, vcpu int, memory_in_gb uint, image_uri, user_data
 
 	log.Printf("Domain Definition XML: %v", domainDef)
 
-	conn, err := libvirt.NewConnect("qemu+tcp://192.168.122.1:16509/system")
-	//log.Printf("JDG-Debug: Trying to create a new connection using: %s\n", nodeURI)
-	//conn, err := libvirt.NewConnect(nodeURI)
+	conn, err := libvirt.NewConnect(nodeURI)
 	if err != nil {
 		log.Printf("Error creating a new Libvirt connection: %v", err)
 		return fmt.Errorf("Error creating a new Libvirt connection: %v", err)
@@ -33,10 +31,25 @@ func CreateDomain(name string, vcpu int, memory_in_gb uint, image_uri, user_data
 	return nil
 }
 
+func DeleteDomain(domainName, nodeURI string) (bool, error) {
+
+	conn, err := libvirt.NewConnect(nodeURI)
+	if err != nil {
+		log.Printf("Error deleting domain: %v, on node: %v\n", domainName, nodeURI)
+		return false, fmt.Errorf("Error deleting domain: %v, on node: %v\n", domainName, nodeURI)
+	}
+	defer conn.Close()
+	_, err = conn.DeleteDomain(domainName)
+	if err != nil {
+		log.Printf("Error deleting domain: %v, on node: %v\n", domainName, nodeURI)
+		return false, fmt.Errorf("Error deleting domain: %v, on node: %v\n", domainName, nodeURI)
+	}
+	return true, nil
+
+}
+
 func DomainExists(domainName, nodeURI string) (bool, error) {
-	conn, err := libvirt.NewConnect("qemu+tcp://192.168.122.1:16509/system")
-	//log.Printf("JDG-Debug: Trying to create a new connection using: %s\n", nodeURI)
-	//conn, err := libvirt.NewConnect(nodeURI)
+	conn, err := libvirt.NewConnect(nodeURI)
 	if err != nil {
 		log.Printf("Error creating a new Libvirt connection: %v", err)
 		return false, fmt.Errorf("Error creating a new Libvirt connection: %v", err)

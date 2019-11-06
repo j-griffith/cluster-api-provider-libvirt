@@ -44,16 +44,6 @@ func (a *Actuator) Create(ctx context.Context, cluster *clusterv1.Cluster, machi
 		return fmt.Errorf("Machine Provider Spec not passed")
 	}
 
-	/*
-		var providerSpec v1alpha1.LibvirtMachineProviderSpec
-		err := yaml.UnmarshalStrict(machine.Spec.ProviderSpec.Value.Raw, &providerSpec)
-		if err != nil {
-			log.Printf("Error unmarshalling machine provider spec: %+v", err)
-			return err
-		}
-		spec := providerSpec.Spec
-	*/
-
 	providerSpec, err := unmarshalProviderSpec(machine)
 	if err != nil {
 		log.Printf("Error creating node for machine: %v, %v", machine, err)
@@ -72,7 +62,25 @@ func (a *Actuator) Create(ctx context.Context, cluster *clusterv1.Cluster, machi
 }
 
 func (a *Actuator) Delete(ctx context.Context, cluster *clusterv1.Cluster, machine *clusterv1.Machine) error {
-	panic("not implemented")
+	if machine.Spec.ProviderSpec.Value == nil {
+		log.Printf("Machine Provider Spec not passed")
+		return fmt.Errorf("Machine Provider Spec not passed")
+	}
+
+	providerSpec, err := unmarshalProviderSpec(machine)
+	if err != nil {
+		log.Printf("Error creating node for machine: %v, %v", machine, err)
+		return fmt.Errorf("Error creating node for machine: %v, %v", machine, err)
+	}
+	log.Printf("Delete machine actuator called for machine %v", providerSpec)
+	err = l.DeleteDomain(machine.Name, providerSpec.Spec.NodeURI)
+	if err != nil {
+		log.Printf("Error deleting node for machine: %v, %v", machine, err)
+		return fmt.Errorf("Error deleting machine: %v, %v", machine, err)
+	}
+
+	log.Printf("Machine %v deleted.", machine.Name)
+	return nil
 }
 
 func (a *Actuator) Update(ctx context.Context, cluster *clusterv1.Cluster, machine *clusterv1.Machine) error {
